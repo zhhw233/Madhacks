@@ -1,21 +1,19 @@
-// Get DOM elements first (after DOM loads)
+let mediaRecorder;
+let audioChunks = [];
+let recordedBlob = null;
+
 const startButton = document.getElementById("startButton");
 const stopButton = document.getElementById("stopButton");
 const audioPlayback = document.getElementById("audioPlayback");
 const predictButton = document.getElementById("predictButton");
 const predictionDiv = document.getElementById("prediction");
 
-// Add stop button handler
 stopButton.addEventListener("click", () => {
 	mediaRecorder.stop();
 	mediaRecorder.stream.getTracks().forEach((track) => track.stop()); // Stop mic access
 	startButton.disabled = false;
 	stopButton.disabled = true;
 });
-
-let mediaRecorder;
-let audioChunks = [];
-let recordedBlob = null;
 
 
 
