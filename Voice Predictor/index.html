@@ -41,6 +41,13 @@
 
             <button id="startButton">Start Recording</button>
             <button id="stopButton" disabled>Stop Recording</button>
+
+            <!-- Live Transcription Display -->
+            <div id="liveTranscription" style="display: none;">
+                <h3 style="color: #FFFFFF; margin-top: 20px;">Live Transcription:</h3>
+                <div id="transcriptionText"></div>
+            </div>
+
             <audio id="audioPlayback" controls></audio>
             <div id="countdown" style="font-size: 20px; margin-top: 10px; color: white;">Ready</div>
             <button id="predictButton" disabled>Predict Accent</button>

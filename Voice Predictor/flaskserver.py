@@ -1,15 +1,34 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import numpy as np
-import pandas as pd
-import librosa
-import xgboost as xgb
+try:
+    import numpy as np
+except Exception:
+    np = None
+try:
+    import pandas as pd
+except Exception:
+    pd = None
+try:
+    import librosa
+except Exception:
+    librosa = None
+try:
+    import xgboost as xgb
+except Exception:
+    xgb = None
 import pickle
 import os
 from werkzeug.utils import secure_filename
 import subprocess
 import tempfile
 import logging
+import requests
+try:
+    from dotenv import load_dotenv
+    # Load .env if present (optional)
+    load_dotenv()
+except Exception:
+    logging.info('python-dotenv not installed; skipping .env load')
 
 app = Flask(__name__)
 CORS(app)
@@ -28,6 +47,12 @@ AGE_LABEL_ENCODER_PATH = "age_label_encoder.pkl"
 SPEAKERS_CSV = "Voices/speakers_all.csv"
 UPLOAD_FOLDER = "temp_uploads"
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'webm', 'm4a', 'flac'}
+
+# Voice cloning removed: keep this flag for backwards-compatibility checks
+MOCK_FISH = False
+
+# Note: Fish Audio API does not support ASR (speech-to-text)
+# Live transcription is handled by Web Speech API in the browser
 
 # Audio params
 SR = 22050
@@ -51,6 +76,17 @@ speakers_df = None
 def load_model():
     global model, label_encoder, sex_model, sex_label_encoder, age_model, age_label_encoder, speakers_df
     try:
+        if MOCK_FISH:
+            logging.info('MOCK_FISH enabled — skipping model pickle loading')
+            # Still attempt to load speakers CSV if pandas is available
+            if pd is not None and os.path.exists(SPEAKERS_CSV):
+                try:
+                    speakers_df = pd.read_csv(SPEAKERS_CSV)
+                    logging.info(f"Loaded speakers dataframe: {speakers_df.shape}")
+                except Exception:
+                    logging.warning('Failed to load speakers CSV in mock mode')
+            return
+
         if os.path.exists(MODEL_PATH):
             with open(MODEL_PATH, 'rb') as f: model = pickle.load(f)
             logging.info(f"Loaded main model: {type(model)}")
@@ -141,8 +177,12 @@ def convert_to_wav(in_path):
         logging.warning(f"ffmpeg conversion failed ({e}), attempting to use original file")
         return in_path
 
+# Transcription removed - Fish Audio doesn't support ASR
+# Live transcription is handled client-side by Web Speech API
+
 def get_accent_info(native_language):
-    if pd.isna(native_language): return "Unknown"
+    if native_language is None:
+        return "Unknown"
     accent = ''.join([c for c in str(native_language) if not c.isdigit()]).capitalize()
     accent_map = {
         'Mandarin': 'Mandarin Chinese',
@@ -214,12 +254,15 @@ def get_speaker_info(pred_class):
         return {'accent': accent, 'country': country, 'native_language': native_language}
     except: return None
 
+
+# Voice cloning / Fish Audio integration removed
+
 @app.route('/')
 def index(): return send_from_directory('.', 'index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if model is None: 
+    if model is None:
         return jsonify({'error':'Model not loaded','accent':'Unknown','age':'Unknown','sex':'Unknown'}),500
     if 'audio' not in request.files: return jsonify({'error':'No audio file'}),400
     file = request.files['audio']
@@ -231,6 +274,7 @@ def predict():
 
     # Convert to WAV for more consistent feature extraction when possible
     wav_path = convert_to_wav(temp_path)
+
     extracted = extract_features(wav_path)
     if isinstance(extracted, tuple):
         features, f0_mean = extracted
@@ -274,6 +318,7 @@ def predict():
         'predicted_class': pred_class,
         'native_language': speaker_info['native_language'] if speaker_info else None
     }
+
     return jsonify(response),200
 
 
@@ -303,6 +348,51 @@ def debug_features():
     # Return basic info for debugging (include f0)
     return jsonify({'shape': int(features.shape[0]), 'features': np.round(features,4).tolist(), 'f0': f0_mean}),200
 
+
+@app.route('/clone_voice', methods=['POST'])
+def clone_voice():
+    """Create a cloned voice on Fish Audio from an uploaded audio sample.
+    Returns JSON with `voice_id` on success.
+    """
+    if 'audio' not in request.files:
+        return jsonify({'error':'No audio file provided'}),400
+    file = request.files['audio']
+    if file.filename == '':
+        return jsonify({'error':'No file selected'}),400
+    filename = secure_filename(file.filename)
+    temp_path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(temp_path)
+    wav_path = convert_to_wav(temp_path)
+    try:
+        # Voice cloning has been removed from this project.
+        return jsonify({'error':'Voice cloning removed from this server'}),410
+    finally:
+        try: os.remove(temp_path)
+        except: pass
+        if 'wav_path' in locals() and wav_path != temp_path:
+            try: os.remove(wav_path)
+            except: pass
+
+
+@app.route('/synthesize', methods=['POST'])
+def synthesize():
+    """Synthesize `text` using either an existing `voice_id` or an uploaded audio sample to create a voice first.
+    Accepts multipart/form-data with keys: 'text', optional 'accent', optional 'voice_id', optional 'audio'.
+    Returns synthesized WAV audio as a file stream on success.
+    """
+    text = request.form.get('text') or (request.json.get('text') if request.is_json else None)
+    accent = request.form.get('accent') or (request.json.get('accent') if request.is_json else None)
+    voice_id = request.form.get('voice_id') or (request.json.get('voice_id') if request.is_json else None)
+
+    if not text:
+        return jsonify({'error':'Missing `text` parameter'}),400
+
+    # Voice synthesis using cloned voices has been removed. Return method not supported.
+    return jsonify({'error':'Synthesis with cloned voices removed from this server'}),410
+
+# Removed /transcribe_chunk endpoint - Fish Audio doesn't support ASR
+# Live transcription is handled client-side by Web Speech API
+
 @app.route('/test', methods=['GET'])
 def test(): return jsonify({'message':'Backend working!'}),200
 
@@ -317,4 +407,5 @@ def get_accents():
 if __name__=='__main__':
     load_model()
     print("Server ready at http://localhost:5001")
+    print("Live transcription: Web Speech API (client-side)")
     app.run(debug=True, host='0.0.0.0', port=5001)

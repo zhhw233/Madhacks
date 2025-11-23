@@ -203,6 +203,48 @@ button:disabled {
 }
 
 
+/* ===== LIVE TRANSCRIPTION ===== */
+#liveTranscription {
+    background-color: rgba(123, 143, 235, 0.15);
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    max-width: 700px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(139, 159, 235, 0.3);
+}
+
+#transcriptionText {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    min-height: 60px;
+    color: #E0F2FE;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    text-align: left;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+#transcriptionText:empty::before {
+    content: "Listening...";
+    color: #B5BFEF;
+    opacity: 0.7;
+    font-style: normal;
+}
+
+/* Pulsing dot animation for live transcription */
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+#transcriptionText span:last-child {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
 /* ===== PREDICTION RESULTS ===== */
 #prediction {
     background-color: rgba(138, 180, 248, 0.2);
@@ -225,6 +267,52 @@ button:disabled {
     margin: 10px 0;
     font-size: 1.1rem;
     color: #e0f2fe;
+}
+
+/* ===== LOADING ANIMATION ===== */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(139, 159, 235, 0.3);
+    border-top: 4px solid #8B9FEB;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-container p {
+    margin: 5px 0;
+    font-size: 1rem;
+    color: #B5BFEF;
+    animation: fadeInOut 2s ease-in-out infinite;
+}
+
+.loading-container p:nth-child(3) {
+    animation-delay: 0s;
+}
+
+.loading-container p:nth-child(4) {
+    animation-delay: 0.5s;
+}
+
+.loading-container p:nth-child(5) {
+    animation-delay: 1s;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
 }
 
 

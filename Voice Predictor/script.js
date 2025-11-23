@@ -11,6 +11,8 @@ const audioPlayback = document.getElementById("audioPlayback");
 const predictButton = document.getElementById("predictButton");
 const predictionDiv = document.getElementById("prediction");
 const countdownDisplay = document.getElementById("countdown");
+const liveTranscriptionDiv = document.getElementById("liveTranscription");
+const transcriptionTextDiv = document.getElementById("transcriptionText");
 
 // Function to show landing page
 function showLandingPage() {
@@ -52,6 +54,62 @@ let stopTimeout;
 let countdownInterval;
 let timeLeft = 30;
 const TARGET_SR = 22050;
+
+// Live transcription using Web Speech API
+let recognition = null;
+let finalTranscript = '';
+let interimTranscript = '';
+
+// Initialize Web Speech API for live transcription
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+	const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+	recognition = new SpeechRecognition();
+	recognition.continuous = true;
+	recognition.interimResults = true;
+	recognition.lang = 'en-US';
+
+	recognition.onresult = (event) => {
+		interimTranscript = '';
+		for (let i = event.resultIndex; i < event.results.length; i++) {
+			const transcript = event.results[i][0].transcript;
+			if (event.results[i].isFinal) {
+				finalTranscript += transcript + ' ';
+			} else {
+				interimTranscript += transcript;
+			}
+		}
+		// Display both final and interim results
+		transcriptionTextDiv.innerHTML =
+			'<span style="color: #E0F2FE;">' + finalTranscript + '</span>' +
+			'<span style="color: #B5BFEF; opacity: 0.7;">' + interimTranscript + '</span>';
+	};
+
+	recognition.onerror = (event) => {
+		console.error('Speech recognition error:', event.error);
+		if (event.error === 'no-speech') {
+			// Silently restart recognition
+			try {
+				recognition.start();
+			} catch (e) {
+				// Already running
+			}
+		}
+	};
+
+	recognition.onend = () => {
+		// Auto-restart if recording is still active
+		if (mediaRecorder && mediaRecorder.state === "recording") {
+			try {
+				recognition.start();
+			} catch (e) {
+				console.log('Recognition already started');
+			}
+		}
+	};
+}
+
+// Removed Fish Audio transcription functions - service doesn't support ASR
+// Using Web Speech API for all live transcription
 
 /* DNA PARTICLES — Soft Orb Helix */
 const dnaContainer = document.getElementById("dnaParticles");
@@ -105,6 +163,15 @@ stopButton.addEventListener("click", () => {
 		mediaRecorder.stream.getTracks().forEach((track) => track.stop());
 	}
 
+	// Stop Web Speech API if it's running
+	if (recognition) {
+		try {
+			recognition.stop();
+		} catch (e) {
+			console.log('Recognition already stopped');
+		}
+	}
+
 	clearTimeout(stopTimeout);
 	clearInterval(countdownInterval);
 
@@ -125,6 +192,25 @@ startButton.addEventListener("click", async () => {
 		mediaRecorder = new MediaRecorder(stream);
 		audioChunks = [];
 		timeLeft = 30;
+
+		// Reset and start Web Speech API transcription
+		finalTranscript = '';
+		interimTranscript = '';
+		transcriptionTextDiv.innerHTML = '<span style="color: #B5BFEF; opacity: 0.7;">Starting transcription...</span>';
+		liveTranscriptionDiv.style.display = 'block';
+
+		// Start Web Speech API for live transcription
+		if (recognition) {
+			try {
+				recognition.start();
+				console.log('Web Speech API live transcription started');
+			} catch (e) {
+				console.error('Could not start Web Speech API:', e);
+				transcriptionTextDiv.innerHTML = '<span style="color: #FFA500;">⚠ Live transcription unavailable. Please use Chrome or Edge browser.</span>';
+			}
+		} else {
+			transcriptionTextDiv.innerHTML = '<span style="color: #FFA500;">⚠ Live transcription unavailable. Please use Chrome or Edge browser.</span>';
+		}
 
 		mediaRecorder.start();
 
@@ -171,6 +257,15 @@ startButton.addEventListener("click", async () => {
 			clearTimeout(stopTimeout);
 			clearInterval(countdownInterval);
 
+			// Stop Web Speech API if it's running
+			if (recognition) {
+				try {
+					recognition.stop();
+				} catch (e) {
+					console.log('Recognition already stopped');
+				}
+			}
+
 			if (countdownDisplay) {
 				countdownDisplay.textContent = "Done";
 				countdownDisplay.style.color = "white";
@@ -205,8 +300,15 @@ predictButton.addEventListener("click", async () => {
 		return;
 	}
 
-	predictionDiv.textContent = "Analyzing...";
-	predictionDiv.textContent.style = "white";
+	predictionDiv.innerHTML = `
+		<div class="loading-container">
+			<h3>Analyzing your voice...</h3>
+			<div class="loading-spinner"></div>
+			<p>🎤 Extracting voice features...</p>
+			<p>🌐 Transcribing speech...</p>
+			<p>🧠 Running AI models...</p>
+		</div>
+	`;
 	predictButton.disabled = true;
 
 	try {
@@ -303,12 +405,14 @@ predictButton.addEventListener("click", async () => {
 		const result = await response.json();
 
 		// Display prediction with individual confidence scores
-		predictionDiv.innerHTML = `
+		let resultHTML = `
 			<h3>Prediction Results:</h3>
 			<p>Accent: ${result.accent} (${result.accent_confidence}%)</p>
 			<p>Age: ${result.age} (${result.age_confidence}%)</p>
 			<p>Sex: ${result.sex} (${result.sex_confidence}%)</p>
 		`;
+
+		predictionDiv.innerHTML = resultHTML;
 	} catch (err) {
 		console.error("Error predicting:", err);
 		predictionDiv.textContent = "Error making prediction. Please try again.";
@@ -317,3 +421,5 @@ predictButton.addEventListener("click", async () => {
 		predictButton.disabled = false;
 	}
 });
+
+// (Voice cloning / synthesis removed) UI no longer calls /synthesize
