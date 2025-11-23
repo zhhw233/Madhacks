@@ -1,2 +1,2 @@
 # Madhacks
-project repository for Madhacks 2025
+Project repository for Madhacks 2025
