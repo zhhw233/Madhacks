@@ -1,6 +1,8 @@
 # Madhacks
 Project repository for VocalDNA - Madhacks 2025.
 
+![Image of VocalDNA cover art.](vocaldna.jpg)
+
 This is a tool to determine where and how old you are based off of the sound, pitch, 
 and accent that your voice carries. This is a neat way to discover whether or not your 
 voice actually matches your appearance!
