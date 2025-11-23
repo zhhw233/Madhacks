@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <link rel="stylesheet" type="text/css" href="styles.css" />
+    <script type="text/javascript" src="script.js" defer></script>
+    </head>
+
+    <body>
+        <div id="dnaParticles"></div>
+
+        <!-- Navigation Bar -->
+        <nav id="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">VocalDNA</div>
+                <div class="nav-links">
+                    <a href="#" id="navHome" class="nav-link active">Home</a>
+                    <a href="#" id="navApp" class="nav-link">Try It</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Landing Page -->
+        <div id="landingPage">
+            <img id="logo" src="vocaldna-logo.svg" alt="VocalDNA Logo" id="logo">
+            <p class="tagline">Discover your unique vocal identity through AI-powered voice analysis</p>
+            <button id="tryNowButton">Try Now</button>
+        </div>
+
+        <!-- Main App (hidden by default) -->
+        <div id="mainApp" style="display: none;">
+            <h1> VocalDNA </h1>
+            <h2> This is a tool to determine where and how old you are based off of the sound, pitch, and accent that your voice carries. This is a neat way to discover whether or not your voice actually matches your appearance! </h2>
+            <h2> [For best accuracy, please read the phrase below]</h2>
+            <p> "Please call Stella.  Ask her to bring these things with her from the store:  Six spoons of fresh snow peas, five thick slabs of blue cheese, and maybe a snack for her brother Bob.  We also need a small plastic snake and a big toy frog for the kids.  She can scoop these things into three red bags, and we will go meet her Wednesday at the train station." </p>
+            <h2> Note: It is okay if you don't complete the phrase. </h2>
+            <h1>Voice Recorder</h1>
+
+            <button id="startButton">Start Recording</button>
+            <button id="stopButton" disabled>Stop Recording</button>
+            <audio id="audioPlayback" controls></audio>
+            <div id="countdown" style="font-size: 20px; margin-top: 10px; color: white;">Ready</div>
+            <button id="predictButton" disabled>Predict Accent</button>
+            <div id="prediction"></div>
+        </div>
+    </body>
+    
+</html>
